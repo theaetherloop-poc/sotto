@@ -3,6 +3,7 @@
 2. You will go to the doctor view. As a doctor, share the link with another user who will be the patient in the this coversation.
 3. 2 users (Doctor and Patient) need to log in from two different devices.Ideal environment for conversation is a quiet room and use headphones
 4. Once both users are logged in and connected, use the Sotto_Capture_LiveScript.docx to have a sample conversatoin. This tests three core value adds in the solution
+   
   **Ambient Co-pilot- Live Root-cause probe**
      Patient: “I used to work at a print shop, lots of solvents.”
      Within 2s a Suggested Next Question stack appears — solvent names? route (inhaled / skin)? duration? PPE? symptoms? — each cited to the KB. 
