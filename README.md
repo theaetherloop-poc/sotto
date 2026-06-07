@@ -1,3 +1,21 @@
+# Sotto — ambient AI co-pilot for live functional-medicine consults
+
+> *Sotto voce* — "in a low voice."
+> Sotto listens to a doctor-patient consultation in real time and quietly surfaces context
+> cards to the doctor's screen — never speaks, never interrupts.
+
+It joins a [LiveKit](https://livekit.io) room with two humans (**doctor** + **patient**),
+transcribes each microphone via Deepgram Nova-3 Medical, feeds a merged speaker-labeled
+transcript into an LLM cue engine (GPT-5 mini), and pushes one of three card types to the
+doctor's dashboard when the model judges there's a clear opportunity:
+
+- **Suggested Next Question** — a root-cause follow-up worth asking now.
+- **Patient Context** — a relevant fact (labs, wearables, history; Phase 1 invents plausibly).
+- **Protocol Direction** — a directional intervention worth exploring.
+
+**This is a hackathon POC, not a production system.** It does not handle PHI, has no
+authentication, and is intended for demos and internal exploration only.
+
 **Demo Video**- https://youtu.be/VpwMCkp8qig
 **HOW TO TEST THE CODE?**
 1. Go to the hosted app - https://sotto-gamma-seven.vercel.app/ 
@@ -36,23 +54,6 @@ YOU CAN CHOOSE TO TEST WITHOUT THE SCRIPT TOO. THE SCRIPT ALLOWS TESTING ALL THE
 
 
 
-# Sotto — ambient AI co-pilot for live functional-medicine consults
-
-> *Sotto voce* — "in a low voice."
-> Sotto listens to a doctor-patient consultation in real time and quietly surfaces context
-> cards to the doctor's screen — never speaks, never interrupts.
-
-It joins a [LiveKit](https://livekit.io) room with two humans (**doctor** + **patient**),
-transcribes each microphone via Deepgram Nova-3 Medical, feeds a merged speaker-labeled
-transcript into an LLM cue engine (GPT-5 mini), and pushes one of three card types to the
-doctor's dashboard when the model judges there's a clear opportunity:
-
-- **Suggested Next Question** — a root-cause follow-up worth asking now.
-- **Patient Context** — a relevant fact (labs, wearables, history; Phase 1 invents plausibly).
-- **Protocol Direction** — a directional intervention worth exploring.
-
-**This is a hackathon POC, not a production system.** It does not handle PHI, has no
-authentication, and is intended for demos and internal exploration only.
 
 <img width="682" height="710" alt="architecture png" src="https://github.com/user-attachments/assets/a8c61f57-0876-4bf4-9fbd-3ef92b90ccf0" />
 
