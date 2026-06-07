@@ -1,8 +1,10 @@
+**Demo Video **- https://youtu.be/VpwMCkp8qig
 **HOW TO TEST THE CODE?**
-1. Got to the hosted app and initiate a call.
-2. You will go to the doctor view. As a doctor, share the link with another user who will be the patient in the this coversation.
-3. 2 users (Doctor and Patient) need to log in from two different devices.Ideal environment for conversation is a quiet room and use headphones
-4. Once both users are logged in and connected, use the Sotto_Capture_LiveScript.docx to have a sample conversatoin. This tests three core value adds in the solution
+1. Go to the hosted app - https://sotto-gamma-seven.vercel.app/ 
+2. As a doctor, share the PATIENT JOIN LINK link with another user who will be the patient in the this coversation.
+3. Initiate a call by clicking on START CALL.
+4. 2 users (Doctor and Patient) need to log in from two different devices.Ideal environment for conversation is a quiet room and use headphones
+5. Once both users are logged in and connected, use the Sotto_Capture_LiveScript.docx to have a sample conversation. This tests three core features in the solution
    
    A. **Ambient Co-pilot- Live Root-cause probe**
     
