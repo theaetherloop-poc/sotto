@@ -6,11 +6,8 @@
    
   **Ambient Co-pilot- Live Root-cause probe**
      Patient: “I used to work at a print shop, lots of solvents.”.
-     
      Within 2s a Suggested Next Question stack appears — solvent names? route (inhaled / skin)? duration? PPE? symptoms? — each cited to the KB. 
-     
      Practitioner reads one aloud.
-     
      **“That’s our functional-medicine question library, retrieved live by the retrieval engine.”**
   
 **Moss orchestration with KB,Wearables and EHR integration — Fused context**
