@@ -1,4 +1,4 @@
-**How to use?**
+**HOW TO TEST THE CODE?**
 1. Got to the hosted app and initiate a call.
 2. You will go to the doctor view. As a doctor, share the link with another user who will be the patient in the this coversation.
 3. 2 users (Doctor and Patient) need to log in from two different devices.Ideal environment for conversation is a quiet room and use headphones
