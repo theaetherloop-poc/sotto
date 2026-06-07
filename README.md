@@ -20,13 +20,13 @@
    → Patient Context card: “Oura: avg 5.5h sleep, HRV ↓20% over 3 weeks” + “Ferritin trending down, last 2 panels (EHR).” 
    
    
-  **“Three data sources fused in under two seconds.”**
+   **“Three data sources fused in under two seconds.”**
  
    C. **- Novel Functional Medicine AI usage - Protocol direction -**
 
-  Copilot surfaces a Protocol Direction card (when Generate Protocol is clicked) from the recommendation engine, with citations. 
+      Copilot surfaces a Protocol Direction card (when Generate Protocol is clicked) from the recommendation engine, with citations. 
   
-  **“Grounded in the patient’s own data — not a hallucination.”**
+      **“Grounded in the patient’s own data — not a hallucination.”**
 
 YOU CAN CHOOSE TEST WITHOUT THE SCRIPT TOO. THE SCRIPT ALLOWS TESTING ALL THE FEATURES.
 5. Leave the call once finished.
