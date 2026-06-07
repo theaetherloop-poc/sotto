@@ -1,0 +1,42 @@
+[project]
+name = "sotto-agent"
+version = "0.1.0"
+description = "Sotto — ambient LiveKit voice agent for live functional-medicine consults"
+requires-python = ">=3.11"
+dependencies = [
+    "livekit-agents~=1.5",
+    "livekit-api~=1.0",
+    "python-dotenv>=1.0",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+# Opt-in OpenTelemetry export. Install with:  uv sync --extra telemetry
+# Then set LANGFUSE_* or OTEL_EXPORTER_OTLP_ENDPOINT to activate.
+telemetry = [
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sotto"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 agent-py/.venv/
+sotto-agent/.venv/
 
 # Build output
 frontend/.next/
@@ -11,6 +12,11 @@ frontend/out/
 *.pyc
 agent-py/.ruff_cache/
 agent-py/.pytest_cache/
+sotto-agent/.ruff_cache/
+sotto-agent/.pytest_cache/
+
+# Agent runtime artifacts
+sotto-agent/logs/
 
 # Local env
 .env
@@ -18,7 +24,7 @@ agent-py/.pytest_cache/
 .env.*.local
 
 # OS
-.DS_Store
+**/.DS_Store
 Thumbs.db
 
 # Editor

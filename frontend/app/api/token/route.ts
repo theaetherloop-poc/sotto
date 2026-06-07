@@ -1,8 +1,5 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { AccessToken, type AccessTokenOptions, type VideoGrant } from 'livekit-server-sdk';
-import { randomUUID } from 'node:crypto';
-import { RoomAgentDispatch, RoomConfiguration } from '@livekit/protocol';
 
 type ConnectionDetails = {
   serverUrl: string;
@@ -15,22 +12,22 @@ type ConnectionDetails = {
 const API_KEY = process.env.LIVEKIT_API_KEY;
 const API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL;
-// Agent dispatch name — must match the agent's registered name (`agent-py`). See `.env.local`.
-const AGENT_NAME = process.env.AGENT_NAME;
 
-// httpOnly cookie that persists a stable per-user id across visits. Stamped into the agent
-// dispatch metadata as `{ "user_id": <uuid> }` so the agent can scope its Moss memory per user.
-const USER_COOKIE = 'lk_moss_user';
-const USER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+// Sotto is an ambient observer of a two-party consult. The local participant joins as either
+// "doctor" or "patient" (identity = role), and the Sotto agent auto-dispatches to the room
+// (it registers with no agent_name), so no explicit agent dispatch is stamped here.
+const ALLOWED_ROLES = new Set(['doctor', 'patient']);
 
 // don't cache the results
 export const revalidate = 0;
 
 export async function POST(req: Request) {
-  if (process.env.NODE_ENV !== 'development') {
-    throw new Error(
-      'THIS API ROUTE IS INSECURE. DO NOT USE THIS ROUTE IN PRODUCTION WITHOUT AN AUTHENTICATION LAYER.'
-    );
+  // POC NOTE: this route mints LiveKit room tokens without authentication. That is
+  // intentional for the shareable demo deployment of Sotto. Any traffic to it consumes
+  // LiveKit Inference credits on the configured project. Before opening this URL to a
+  // broader audience, gate it (shared secret, OAuth, etc.).
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('[sotto] /api/token is open. POC demo only — not for real PHI traffic.');
   }
 
   try {
@@ -44,69 +41,29 @@ export async function POST(req: Request) {
       throw new Error('LIVEKIT_API_SECRET is not defined');
     }
 
-    // Resolve a stable per-user id from the httpOnly cookie, minting one on first visit.
-    const cookieStore = await cookies();
-    let userId = cookieStore.get(USER_COOKIE)?.value;
-    const isNewUser = !userId;
-    if (!userId) {
-      userId = randomUUID();
-    }
+    const body = await req.json().catch(() => ({}));
+    const role = ALLOWED_ROLES.has(body?.role) ? (body.role as string) : 'doctor';
+    const roomName =
+      typeof body?.room === 'string' && body.room.trim()
+        ? body.room.trim()
+        : `sotto-${Math.floor(Math.random() * 1_000_000)}`;
 
-    // Parse room config from request body.
-    const body = await req.json();
-    const roomConfig = body?.room_config
-      ? RoomConfiguration.fromJson(body.room_config, { ignoreUnknownFields: true })
-      : new RoomConfiguration();
-
-    // Stamp `{ "user_id": <uuid> }` as the agent dispatch metadata. The agent reads this via
-    // `ctx.job.metadata`. Ensure an agent dispatch entry exists (using AGENT_NAME for explicit
-    // dispatch) and preserve any agent name already supplied by the client.
-    if (roomConfig.agents.length === 0) {
-      roomConfig.agents.push(new RoomAgentDispatch({ agentName: AGENT_NAME ?? '' }));
-    }
-    const dispatchMetadata = JSON.stringify({ user_id: userId });
-    for (const agent of roomConfig.agents) {
-      if (!agent.agentName && AGENT_NAME) {
-        agent.agentName = AGENT_NAME;
-      }
-      agent.metadata = dispatchMetadata;
-    }
-
-    // Generate participant token
-    const participantName = 'user';
-    const participantIdentity = `voice_assistant_user_${Math.floor(Math.random() * 10_000)}`;
-    const roomName = `voice_assistant_room_${Math.floor(Math.random() * 10_000)}`;
-
+    // Identity must be UNIQUE per connection or LiveKit kicks duplicates (which, with
+    // React StrictMode double-mounting in dev, drops the session). The role is carried as
+    // the identity prefix (`doctor-xxxxxx`); the agent derives the speaker label from it.
+    const suffix = Math.random().toString(36).slice(2, 8);
     const participantToken = await createParticipantToken(
-      { identity: participantIdentity, name: participantName },
-      roomName,
-      roomConfig
+      { identity: `${role}-${suffix}`, name: role.charAt(0).toUpperCase() + role.slice(1) },
+      roomName
     );
 
-    // Return connection details
     const data: ConnectionDetails = {
       serverUrl: LIVEKIT_URL,
       roomName,
-      participantName,
+      participantName: role,
       participantToken,
     };
-    const headers = new Headers({
-      'Cache-Control': 'no-store',
-    });
-    const response = NextResponse.json(data, { headers });
-
-    // Persist the per-user id for subsequent visits (only needs writing when freshly minted).
-    if (isNewUser) {
-      response.cookies.set(USER_COOKIE, userId, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: (process.env.NODE_ENV as string) === 'production',
-        path: '/',
-        maxAge: USER_COOKIE_MAX_AGE,
-      });
-    }
-
-    return response;
+    return NextResponse.json(data, { headers: new Headers({ 'Cache-Control': 'no-store' }) });
   } catch (error) {
     if (error instanceof Error) {
       console.error(error);
@@ -115,14 +72,10 @@ export async function POST(req: Request) {
   }
 }
 
-function createParticipantToken(
-  userInfo: AccessTokenOptions,
-  roomName: string,
-  roomConfig: RoomConfiguration | undefined
-): Promise<string> {
+function createParticipantToken(userInfo: AccessTokenOptions, roomName: string): Promise<string> {
   const at = new AccessToken(API_KEY, API_SECRET, {
     ...userInfo,
-    ttl: '15m',
+    ttl: '60m',
   });
   const grant: VideoGrant = {
     room: roomName,
@@ -132,10 +85,5 @@ function createParticipantToken(
     canSubscribe: true,
   };
   at.addGrant(grant);
-
-  if (roomConfig) {
-    at.roomConfig = roomConfig;
-  }
-
   return at.toJwt();
 }

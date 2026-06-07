@@ -6,6 +6,48 @@ import type { AppConfig } from '@/app-config';
 export const CONFIG_ENDPOINT = process.env.NEXT_PUBLIC_APP_CONFIG_ENDPOINT;
 export const SANDBOX_ID = process.env.SANDBOX_ID;
 
+/**
+ * Token source for Sotto: POSTs the participant `role` ("doctor" | "patient") and `room`
+ * name to /api/token, which mints a token whose identity equals the role so the ambient
+ * agent can label each speaker.
+ */
+export function getSottoTokenSource(role: string, room: string) {
+  return TokenSource.custom(async () => {
+    const res = await fetch('/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, room }),
+    });
+    if (!res.ok) {
+      throw new Error(`Token request failed: ${res.status}`);
+    }
+    return await res.json();
+  });
+}
+
+/**
+ * Builds a meet.livekit.io join URL for the patient. The patient needs no custom UI (mic only,
+ * no cue dashboard), so we point them at LiveKit's public hosted client — reachable from any
+ * device over HTTPS, unlike the localhost dev frontend. A `patient` token for `room` is minted
+ * server-side via /api/token.
+ */
+export async function fetchPatientMeetUrl(room: string): Promise<string> {
+  const res = await fetch('/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role: 'patient', room }),
+  });
+  if (!res.ok) {
+    throw new Error(`Patient token request failed: ${res.status}`);
+  }
+  const { serverUrl, participantToken } = (await res.json()) as {
+    serverUrl: string;
+    participantToken: string;
+  };
+  const params = new URLSearchParams({ liveKitUrl: serverUrl, token: participantToken });
+  return `https://meet.livekit.io/custom?${params.toString()}`;
+}
+
 export interface SandboxConfig {
   [key: string]:
     | { type: 'string'; value: string }

@@ -1,0 +1,49 @@
+# Tests and fixtures
+tests/
+fixtures/
+*.test.py
+
+# Python bytecode and artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtual envs and caches
+.venv/
+venv/
+.cache/
+.pytest_cache/
+.ruff_cache/
+coverage/
+
+# Logs and temp files
+logs/
+*.log
+*.gz
+*.tgz
+.tmp
+
+# Environment variables (LiveKit Cloud injects secrets at runtime)
+.env
+.env.*
+
+# VCS, editor, OS
+.git
+.gitignore
+.gitattributes
+.github/
+.idea/
+.vscode/
+.DS_Store
+
+# Project docs
+README.md
+
+# Coding agent files
+.claude/
+CLAUDE.md
+AGENTS.md

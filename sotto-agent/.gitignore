@@ -1,0 +1,13 @@
+.env.local
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+logs/
+fixtures/*.wav
+!fixtures/.gitkeep
+*.egg-info/
+dist/
+build/

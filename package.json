@@ -13,6 +13,11 @@
     "dev:frontend": "pnpm --dir frontend dev",
     "dev:agent-py": "uv --directory agent-py run src/agent.py dev",
 
+    "dev:sotto": "uv --directory sotto-agent run src/sotto_agent.py dev",
+    "sotto": "concurrently -n sotto,frontend -c green,magenta \"pnpm dev:sotto\" \"pnpm dev:frontend\"",
+    "sotto:tokens": "uv --directory sotto-agent run python -m sotto.scripts.gen_tokens",
+    "test:sotto": "uv --directory sotto-agent run pytest",
+
     "agent:py:console": "uv --directory agent-py run src/agent.py console",
     "agent:py:start": "uv --directory agent-py run src/agent.py start",
     "agent:py:download-files": "uv --directory agent-py run src/agent.py download-files",

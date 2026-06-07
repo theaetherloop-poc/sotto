@@ -9,8 +9,9 @@ import {
   type AgentControlBarControls,
 } from '@/components/agents-ui/agent-control-bar';
 import { Shimmer } from '@/components/ai-elements/shimmer';
-import { MossResultsPanel } from '@/components/app/moss-results-panel';
-import { useMossContextEvents } from '@/hooks/useMossContextEvents';
+import { PatientShareLink } from '@/components/app/patient-share-link';
+import { SottoCuePanel } from '@/components/app/sotto-cue-panel';
+import { useSottoCues } from '@/hooks/useSottoCues';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
 
@@ -153,6 +154,10 @@ export interface AgentSessionView_01Props {
   audioVisualizerRadialRadius?: number;
   /** Stroke width of the wave path when `audioVisualizerType` is `wave`. */
   audioVisualizerWaveLineWidth?: number;
+  /** Consult role of the local participant. Only `doctor` sees the cue dashboard + share link. */
+  role?: 'doctor' | 'patient';
+  /** Shareable URL the patient uses to join this room (shown to the doctor). */
+  patientShareUrl?: string;
   /** Optional class name merged onto the outer `<section>` container. */
   className?: string;
 }
@@ -173,6 +178,8 @@ export function AgentSessionView_01({
   audioVisualizerRadialBarCount,
   audioVisualizerRadialRadius,
   audioVisualizerWaveLineWidth,
+  role = 'doctor',
+  patientShareUrl,
   ref,
   className,
   ...props
@@ -182,8 +189,9 @@ export function AgentSessionView_01({
   const [chatOpen, setChatOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { state: agentState } = useAgent();
-  // Live "Knowledge Matches" surfaced from the agent's `moss_context` data messages.
-  const mossEvents = useMossContextEvents();
+  // Live cue cards surfaced from the Sotto agent's `sotto_cue` data messages.
+  const cues = useSottoCues();
+  const isDoctor = role === 'doctor';
 
   const controls: AgentControlBarControls = {
     leave: true,
@@ -227,11 +235,14 @@ export function AgentSessionView_01({
           )}
         </AnimatePresence>
       </div>
-      {/* Live Knowledge Matches panel (Moss retrieval results) — renders beside the
-          visualizer/transcript, inside the RoomContext provider. Hidden until matches arrive. */}
-      <div className="pointer-events-auto absolute top-0 right-0 bottom-[170px] z-[60] hidden w-full max-w-sm overflow-y-auto overscroll-contain px-4 pt-40 pb-4 md:block">
-        <MossResultsPanel events={mossEvents} />
-      </div>
+      {/* Doctor-only co-pilot rail: live cue cards from the Sotto agent + the patient join
+          link. Renders beside the visualizer, inside the RoomContext provider. */}
+      {isDoctor && (
+        <div className="pointer-events-auto absolute top-0 right-0 bottom-[170px] z-[60] hidden w-full max-w-sm space-y-3 overflow-y-auto overscroll-contain px-4 pt-40 pb-4 md:block">
+          {patientShareUrl && <PatientShareLink url={patientShareUrl} />}
+          <SottoCuePanel cues={cues} />
+        </div>
+      )}
       {/* Tile layout */}
       <TileLayout
         chatOpen={chatOpen}
