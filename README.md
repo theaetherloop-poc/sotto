@@ -20,7 +20,9 @@
    
    Patient: “I’ve just been so exhausted lately.” 
    
+   
    → Patient Context card: “Oura: avg 5.5h sleep, HRV ↓20% over 3 weeks” + “Ferritin trending down, last 2 panels (EHR).” 
+   
    
 **“Three data sources fused in under two seconds.”**
  
