@@ -17,9 +17,8 @@
    **“That’s our functional-medicine question library, retrieved live by the retrieval engine.”**
   
 **Moss orchestration with KB,Wearables and EHR integration — Fused context**
-   
+
    Patient: “I’ve just been so exhausted lately.” 
-   
    
    → Patient Context card: “Oura: avg 5.5h sleep, HRV ↓20% over 3 weeks” + “Ferritin trending down, last 2 panels (EHR).” 
    
