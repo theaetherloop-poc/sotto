@@ -16,6 +16,12 @@ doctor's dashboard when the model judges there's a clear opportunity:
 **This is a hackathon POC, not a production system.** It does not handle PHI, has no
 authentication, and is intended for demos and internal exploration only.
 
+<img width="682" height="710" alt="architecture png" src="https://github.com/user-attachments/assets/a8c61f57-0876-4bf4-9fbd-3ef92b90ccf0" />
+
+<img width="1526" height="868" alt="image (7)" src="https://github.com/user-attachments/assets/c2659129-67fc-499c-9046-bebb581f5fee" />
+
+
+
 ## Repository layout
 
 ```
