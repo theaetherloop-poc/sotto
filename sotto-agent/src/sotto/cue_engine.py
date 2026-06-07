@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 # (LiveKit Inference LLM with json_object response_format); tests inject a stub.
 LLMCall = Callable[[str], Awaitable[str]]
 
-# retrieve(transcript_window) -> a formatted PATIENT_CONTEXT block (or "" when there's nothing to
-# add). Optional: when absent, the cue engine runs with no patient history (Phase 1 behavior).
+# retrieve(query) -> a formatted PATIENT_CONTEXT + KB_CANDIDATES block (or "" when there's nothing
+# to add). ``query`` is the patient's latest utterance (see _evaluate). Optional: when absent, the
+# cue engine runs with no patient history (Phase 1 behavior).
 RetrieveFn = Callable[[str], Awaitable[str]]
 
 
@@ -48,6 +49,8 @@ YOU RECEIVE EACH CALL
 - PRACTITIONER_FOLLOWUPS (optional): pre-visit questions the practitioner flagged.
 - KB_CANDIDATES: retrieved Aether Loop library questions (id, phase3_section, conditional \
 trigger). Prefer these.
+- SESSION_STATE: how many cards you've already shown this consult and how long since the last \
+one. Use it to pace yourself — there is NO automatic timer; pacing is entirely your judgment.
 - TRANSCRIPT: last ~60s, speaker-labeled.
 - RECENT_CARDS: what you've already shown (never repeat).
 - EHR_DATA / WEARABLE_DATA / UPLOADED_DOCS (optional): labs, wearable trends, parsed uploads.
@@ -93,6 +96,11 @@ reached yet, and do not drag it back to one it has moved past.
 - Across a whole consult, a few well-timed cards is the goal — NOT a steady stream. When in \
 doubt about whether THIS is the moment, it is not: choose {"action":"none"} and wait. A great \
 cue one beat later beats a noisy one now.
+- SELF-SCORE every card with "usefulness" (0.0-1.0): how much surfacing THIS card RIGHT NOW \
+helps the doctor, accounting for timing and SESSION_STATE. 0.9+ = a clear gap the doctor would \
+thank you for; ~0.6 = plausibly helpful; below 0.5 = marginal/ill-timed. Score honestly — \
+borderline cards are held back, so do not inflate. If it isn't clearly worth >=0.6, return \
+{"action":"none"} instead.
 
 WHEN NOT TO SURFACE — bias HARD toward none
 - Default to {"action":"none"}. Silence is correct most of the time.
@@ -120,12 +128,34 @@ OR
 "kb_id":"<id if source=kb, else null>",
 "content":"<=25 words, directly useful to the doctor>",
 "rationale":"<one sentence: the FM reasoning + why now>",
+"usefulness":<0.0-1.0, how useful surfacing this is RIGHT NOW>,
 "triggered_by_speaker":"doctor" | "patient",
 "transcript_snippet":"<the trigger phrase, <=15 words>"}"""
 
 
 def _normalize(text: str) -> str:
     return " ".join(text.lower().split())
+
+
+# Minimum fraction of a card's transcript_snippet tokens that must actually appear in the recent
+# window for the card to count as grounded. The model occasionally hallucinates a trigger phrase
+# nobody said; requiring real token overlap with the transcript catches that. Order-insensitive
+# and STT-punctuation tolerant on purpose — this is a sanity gate, not an exact-quote check.
+_SNIPPET_MIN_OVERLAP = 0.6
+
+
+def _snippet_grounded(snippet: str, window: str) -> bool:
+    """True if enough of ``snippet``'s words actually occur in the transcript ``window``.
+
+    Empty snippet → not grounded (a card must cite a real trigger phrase; if it can't, we treat
+    it as unverifiable and drop it).
+    """
+    snippet_tokens = _normalize(snippet).split()
+    if not snippet_tokens:
+        return False
+    window_tokens = set(_normalize(window).split())
+    hits = sum(1 for tok in snippet_tokens if tok in window_tokens)
+    return (hits / len(snippet_tokens)) >= _SNIPPET_MIN_OVERLAP
 
 
 def _extract_json(raw: str) -> dict | None:
@@ -157,8 +187,9 @@ class CueEngine:
         sinks: Sequence[CueSink],
         *,
         window_seconds: int = 60,
-        debounce_seconds: float = 0.5,
-        cooldown_seconds: float = 20.0,
+        settle_seconds: float = 1.8,
+        trigger_speaker: str = "patient",
+        usefulness_threshold: float = 0.6,
         recent_card_capacity: int = 3,
         metrics: MetricsCollector | None = None,
         retrieve: RetrieveFn | None = None,
@@ -167,24 +198,37 @@ class CueEngine:
         self._transcript = transcript
         self._sinks = list(sinks)
         self._window_seconds = window_seconds
-        self._debounce = debounce_seconds
-        self._cooldown = cooldown_seconds
+        self._settle = settle_seconds
+        self._trigger_speaker = trigger_speaker
+        # No fixed cooldown — pacing is the model's job. It self-scores each candidate's
+        # usefulness 0-1 given the live session state, and we emit only at/above this bar.
+        self._usefulness_threshold = usefulness_threshold
         self._recent: deque[Card] = deque(maxlen=recent_card_capacity)
         self._inflight = asyncio.Lock()
         self._pending: asyncio.Task | None = None
         self._metrics = metrics
         self._retrieve = retrieve
+        # Session state fed back to the model so IT can pace (instead of a blunt timer):
+        # how many cards we've shown this consult and when the last one went out.
+        self._cards_shown = 0
         self._last_emit: float | None = None
 
-    async def on_new_final(self, _event: TranscriptEvent) -> None:
-        """Wire this as a MergedTranscript callback. Cancels any pending debounce."""
+    async def on_new_final(self, event: TranscriptEvent) -> None:
+        """MergedTranscript callback. We trigger evaluation only when the *patient* finishes a
+        turn. Doctor lines are already in the transcript window as context, but a card should
+        react to what the PATIENT revealed, not to the doctor's own speech — triggering on
+        doctor turns was a source of off-target cards. Each new patient final resets a short
+        silence 'settle' timer, so we evaluate once the patient has actually paused (a natural
+        breakpoint) instead of mid-utterance on every interim final."""
+        if event.speaker != self._trigger_speaker:
+            return
         if self._pending and not self._pending.done():
             self._pending.cancel()
-        self._pending = asyncio.create_task(self._debounced_evaluate())
+        self._pending = asyncio.create_task(self._settle_then_evaluate())
 
-    async def _debounced_evaluate(self) -> None:
+    async def _settle_then_evaluate(self) -> None:
         try:
-            await asyncio.sleep(self._debounce)
+            await asyncio.sleep(self._settle)
         except asyncio.CancelledError:
             return
         await self._evaluate()
@@ -202,22 +246,17 @@ class CueEngine:
                 if not window.strip():
                     return
 
-                # Cooldown: let the conversation breathe. Within cooldown_seconds of the last
-                # emitted card, skip the whole evaluation (no retrieve, no LLM call) so cards
-                # can't cluster during a busy stretch.
-                if (
-                    self._last_emit is not None
-                    and (started - self._last_emit) < self._cooldown
-                ):
-                    action = "cooldown"
-                    return
-
                 # PATIENT_CONTEXT + KB_CANDIDATES (and any optional blocks) are assembled by the
-                # injected retrieve fn — the agent wires it to Moss; tests inject a stub.
+                # injected retrieve fn — the agent wires it to Moss; tests inject a stub. We query
+                # with the patient's most recent utterance (not the full mixed window) so the KB
+                # match reflects what the patient just said rather than the whole conversation.
                 context_block = ""
                 if self._retrieve is not None:
+                    retrieval_query = (
+                        await self._transcript.latest_text(self._trigger_speaker) or window
+                    )
                     try:
-                        context_block = await self._retrieve(window)
+                        context_block = await self._retrieve(retrieval_query)
                     except Exception:  # noqa: BLE001
                         logger.exception(
                             "cue_engine: context retrieve failed; proceeding without it"
@@ -228,8 +267,18 @@ class CueEngine:
                     "\n".join(f"- [{c.type}] {c.content}" for c in self._recent) or "(none)"
                 )
                 context_section = f"{context_block}\n\n" if context_block else ""
+                if self._last_emit is None:
+                    since_last = "no cards shown yet this consult"
+                else:
+                    since_last = f"{started - self._last_emit:.0f}s since the last card"
+                session_state = (
+                    f"SESSION_STATE: {self._cards_shown} card(s) shown so far; {since_last}. "
+                    "Use this to pace — if you just surfaced a card and the thread hasn't "
+                    "moved on, prefer staying silent."
+                )
                 user_message = (
                     f"{context_section}"
+                    f"{session_state}\n\n"
                     f"RECENT_CARDS (do not repeat):\n{recent_rendered}\n\n"
                     f"TRANSCRIPT (last {self._window_seconds}s, speaker-labeled):\n{window}\n\n"
                     "Decide."
@@ -255,7 +304,31 @@ class CueEngine:
                     action = "none"
                     return
 
+                # Hallucination guard: the card claims a trigger phrase (transcript_snippet).
+                # If that phrase isn't actually in the recent window, the model invented it —
+                # drop the whole card rather than surface a question grounded in nothing said.
+                if not _snippet_grounded(card.transcript_snippet, window):
+                    logger.info(
+                        "cue_engine: ungrounded snippet %r not in window — dropping card",
+                        card.transcript_snippet[:80],
+                    )
+                    action = "ungrounded"
+                    return
+
+                # The model self-scored how useful this card is RIGHT NOW. Below the bar we
+                # drop it — this replaces the old fixed cooldown with a judgment call the model
+                # makes from the live SESSION_STATE + transcript.
+                if card.usefulness < self._usefulness_threshold:
+                    logger.info(
+                        "cue_engine: usefulness %.2f < %.2f — holding card",
+                        card.usefulness,
+                        self._usefulness_threshold,
+                    )
+                    action = "below_threshold"
+                    return
+
                 self._recent.append(card)
+                self._cards_shown += 1
                 self._last_emit = time.monotonic()
                 action = "card"
                 for sink in self._sinks:
@@ -298,6 +371,13 @@ class CueEngine:
         if source not in ("kb", "adaptive"):
             source = "adaptive"
         kb_id = obj.get("kb_id") if source == "kb" else None
+        # usefulness is the model's own 0-1 confidence that surfacing now helps. Tolerate a
+        # missing/garbage value by defaulting to 1.0 (pass) and clamping into range.
+        try:
+            usefulness = float(obj.get("usefulness", 1.0))
+        except (TypeError, ValueError):
+            usefulness = 1.0
+        usefulness = max(0.0, min(1.0, usefulness))
         try:
             return Card(
                 type=obj["type"],
@@ -307,6 +387,7 @@ class CueEngine:
                 transcript_snippet=obj["transcript_snippet"],
                 source=source,
                 kb_id=kb_id,
+                usefulness=usefulness,
             )
         except KeyError as e:
             logger.warning("cue_engine: card missing field %s; raw=%r", e, raw[:200])

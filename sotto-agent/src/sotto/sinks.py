@@ -29,6 +29,9 @@ class Card:
     transcript_snippet: str
     source: CardSource = "adaptive"
     kb_id: str | None = None
+    # Model's own 0-1 estimate of how useful surfacing this card is RIGHT NOW. The engine gates
+    # on it (emit only above a threshold) in place of a fixed time-based cooldown.
+    usefulness: float = 1.0
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     triggered_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 

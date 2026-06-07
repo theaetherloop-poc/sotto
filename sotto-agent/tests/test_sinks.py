@@ -32,6 +32,7 @@ def test_card_serializes_with_all_fields():
         "transcript_snippet",
         "source",
         "kb_id",
+        "usefulness",
         "triggered_at",
     }
     assert set(payload.keys()) == expected_keys

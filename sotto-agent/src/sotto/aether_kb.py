@@ -21,6 +21,13 @@ logger = logging.getLogger(__name__)
 # Shared question-library index. Overridable so the seeder and the agent stay in sync.
 AETHER_INDEX = os.getenv("MOSS_AETHER_INDEX_NAME", "aether_kb")
 
+# Minimum Moss score for a candidate to be injected as KB_CANDIDATES. Empirically the moss-minilm
+# score is rank/quantized rather than absolute: genuine topic matches saturate the top hit near
+# 1.0 (a relevant cluster stays >= ~0.94), while off-topic chit-chat tops out around 0.89-0.91.
+# 0.93 separates them. Below threshold we inject NOTHING, so the prompt's "prefer these" pressure
+# (a major source of off-topic cards) disappears when nothing actually fits. Env-tunable.
+KB_MIN_SCORE = float(os.getenv("SOTTO_KB_MIN_SCORE", "0.93"))
+
 
 class KbLibrary:
     """Semantic search over the shared Aether Loop question library (KB_CANDIDATES)."""
@@ -43,12 +50,17 @@ class KbLibrary:
         except Exception:
             logger.exception("Failed to load Aether KB index '%s'; will retry on use", self._index)
 
-    async def retrieve(self, query: str, *, top_k: int = 5) -> list[dict]:
-        """Return up to ``top_k`` library questions most relevant to ``query``.
+    async def retrieve(
+        self, query: str, *, top_k: int = 5, min_score: float = KB_MIN_SCORE
+    ) -> list[dict]:
+        """Return library questions relevant to ``query``, gated by ``min_score``.
 
-        Each candidate is ``{"id", "text", "phase3_section", "conditional_on", "trigger_topics"}``.
-        Returns an empty list on no match or any error so the cue engine degrades gracefully
-        (it can still emit ``source="adaptive"`` cards with no library to ground on).
+        Each candidate is ``{"id", "text", "score", "phase3_section", "conditional_on",
+        "trigger_topics"}``. Candidates scoring below ``min_score`` are dropped — when nothing
+        clears the bar we return ``[]`` and inject NO KB block, so the prompt's "prefer these"
+        pull only applies when a question genuinely fits. Returns an empty list on no match or
+        any error so the cue engine degrades gracefully (it can still emit ``source="adaptive"``
+        cards with no library to ground on).
         """
         if not query.strip():
             return []
@@ -60,22 +72,38 @@ class KbLibrary:
             logger.exception("Aether KB query failed; proceeding without KB candidates")
             return []
 
-        candidates: list[dict] = []
+        scored: list[tuple[float, dict]] = []
         for doc in getattr(result, "docs", None) or []:
             text = (getattr(doc, "text", "") or "").strip()
             if not text:
                 continue
+            score = float(getattr(doc, "score", 0.0) or 0.0)
             metadata = getattr(doc, "metadata", None) or {}
-            candidates.append(
-                {
-                    "id": getattr(doc, "id", None) or metadata.get("kb_id"),
-                    "text": text,
-                    "phase3_section": metadata.get("phase3_section"),
-                    "conditional_on": metadata.get("conditional_on"),
-                    "trigger_topics": metadata.get("trigger_topics"),
-                }
+            scored.append(
+                (
+                    score,
+                    {
+                        "id": getattr(doc, "id", None) or metadata.get("kb_id"),
+                        "text": text,
+                        "score": round(score, 4),
+                        "phase3_section": metadata.get("phase3_section"),
+                        "conditional_on": metadata.get("conditional_on"),
+                        "trigger_topics": metadata.get("trigger_topics"),
+                    },
+                )
             )
-        return candidates
+
+        # Log every candidate's score so the threshold can be calibrated from `lk agent logs`.
+        if scored:
+            logger.info(
+                "Aether KB scores (min=%.2f): %s",
+                min_score,
+                ", ".join(f"{c['id']}={s:.3f}" for s, c in scored),
+            )
+        kept = [c for s, c in scored if s >= min_score]
+        if not kept:
+            logger.info("Aether KB: no candidate cleared min_score=%.2f; injecting none", min_score)
+        return kept
 
 
 def format_kb_candidates(candidates: list[dict]) -> str:

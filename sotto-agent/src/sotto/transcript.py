@@ -50,6 +50,19 @@ class MergedTranscript:
             recent = [e for e in self._events if e.timestamp.timestamp() >= cutoff]
         return "\n".join(e.render() for e in recent)
 
+    async def latest_text(self, speaker: Speaker) -> str:
+        """Most recent utterance text for ``speaker`` ("" if none yet).
+
+        Used as the semantic-retrieval query: the patient's latest utterance is a far sharper
+        query than the full mixed window (which buries the signal under timestamps and the
+        doctor's speech).
+        """
+        async with self._lock:
+            for event in reversed(self._events):
+                if event.speaker == speaker:
+                    return event.text
+        return ""
+
     async def snapshot(self) -> list[TranscriptEvent]:
         async with self._lock:
             return list(self._events)

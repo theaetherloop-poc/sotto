@@ -9,10 +9,11 @@ from sotto.aether_kb import KbLibrary, format_kb_candidates
 
 
 class _FakeDoc:
-    def __init__(self, doc_id, text, metadata=None) -> None:
+    def __init__(self, doc_id, text, metadata=None, score=1.0) -> None:
         self.id = doc_id
         self.text = text
         self.metadata = metadata
+        self.score = score
 
 
 class _FakeResult:
@@ -54,6 +55,7 @@ async def test_retrieve_returns_candidate_shape_with_id() -> None:
                     "trigger_topics": "timeline",
                     "cfa": "",
                 },
+                score=0.97,
             )
         ]
     )
@@ -71,11 +73,30 @@ async def test_retrieve_returns_candidate_shape_with_id() -> None:
         {
             "id": "goals_last_well",
             "text": "When did you last feel really well, in body and mind?",
+            "score": 0.97,
             "phase3_section": "Goals & Narrative",
             "conditional_on": "always",
             "trigger_topics": "timeline",
         }
     ]
+
+
+async def test_retrieve_drops_below_threshold_candidate() -> None:
+    client = _FakeMossClient()
+    client.query_result = _FakeResult(
+        [
+            _FakeDoc(
+                "off_topic",
+                "Some loosely related chit-chat question.",
+                {"phase3_section": "Goals & Narrative"},
+                score=0.90,
+            )
+        ]
+    )
+    lib = _lib(client)
+
+    # 0.90 is below the default 0.93 gate → nothing injected.
+    assert await lib.retrieve("unrelated small talk") == []
 
 
 async def test_retrieve_empty_query_skips_moss() -> None:

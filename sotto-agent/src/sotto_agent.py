@@ -45,11 +45,13 @@ ALLOWED_SPEAKERS = ("doctor", "patient")
 # medicine consults. English-only (en, en-US, en-GB, etc. — see Deepgram docs).
 STT_MODEL = "deepgram/nova-3-medical"
 STT_LANGUAGE = "en"
-# Reasoning model. Cheaper than gpt-4.1-mini at this token volume, with noticeably better
-# judgment on the "emit or stay silent" decision. Uses `reasoning_effort` instead of
-# `temperature` (temperature is not supported on reasoning models).
-LLM_MODEL = "openai/gpt-5-mini"
-LLM_REASONING_EFFORT = "low"
+# Fast non-reasoning model for the low-latency "emit or stay silent" decision. Verified on this
+# project at ~1.4s median with a tight tail; gpt-5-mini's reasoning was ~2x slower with a worse
+# tail. The judgment that reasoning bought us is recovered structurally instead: patient-turn
+# triggering, score-gated KB candidates, and the usefulness-score threshold.
+LLM_MODEL = "google/gemini-3.1-flash-lite"
+# Low temperature so the emit/none call is stable across near-identical windows.
+LLM_TEMPERATURE = 0.2
 
 server = AgentServer()
 
@@ -134,7 +136,7 @@ def _build_llm_caller(llm_instance: InferenceLLM):
         # the system prompt to enforce JSON and parse defensively in CueEngine._parse.
         response = await llm_instance.chat(
             chat_ctx=chat_ctx,
-            extra_kwargs={"reasoning_effort": LLM_REASONING_EFFORT},
+            extra_kwargs={"temperature": LLM_TEMPERATURE},
         ).collect()
         return response.text
 
@@ -269,11 +271,13 @@ async def entrypoint(ctx: JobContext) -> None:
         await asyncio.gather(patient_kb.load(), kb_library.load())
         patient_context = await patient_kb.load_summary()
 
-        async def retrieve(window: str) -> str:
+        async def retrieve(query: str) -> str:
+            # ``query`` is the patient's latest utterance (see CueEngine._evaluate), a far
+            # sharper KB-retrieval key than the full mixed transcript window.
             blocks = []
             if patient_context:
                 blocks.append(patient_context)
-            kb_block = format_kb_candidates(await kb_library.retrieve(window))
+            kb_block = format_kb_candidates(await kb_library.retrieve(query))
             if kb_block:
                 blocks.append(kb_block)
             return "\n\n".join(blocks)
