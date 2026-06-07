@@ -9,21 +9,21 @@
     Patient: “I used to work at a print shop, lots of solvents.”.
     
     Within 2s a Suggested Next Question stack appears — 
-    solvent names? route (inhaled / skin)? duration? PPE? symptoms? — each cited to the KB. 
+    Solvent names? route (inhaled / skin)? duration? PPE? symptoms? — each cited to the KB. 
     
     Practitioner reads one aloud.
 
      
-   **“That’s our functional-medicine question library, retrieved live by the retrieval engine.”**
+   **That’s our functional-medicine question library, retrieved live by the retrieval engine.**
   
-**Moss orchestration with KB,Wearables and EHR integration — Fused context**
+  **Moss orchestration with KB,Wearables and EHR integration — Fused context**
 
    Patient: “I’ve just been so exhausted lately.” 
    
    → Patient Context card: “Oura: avg 5.5h sleep, HRV ↓20% over 3 weeks” + “Ferritin trending down, last 2 panels (EHR).” 
    
    
-**“Three data sources fused in under two seconds.”**
+  **“Three data sources fused in under two seconds.”**
  
 **- Novel Functional Medicine AI usage - Protocol direction -**
 
