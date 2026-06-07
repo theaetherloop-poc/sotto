@@ -22,7 +22,7 @@
    
    **“Three data sources fused in under two seconds.”**
  
-   C. **- Novel Functional Medicine AI usage - Protocol direction -**
+   C. **Novel Functional Medicine AI usage - Protocol direction -**
 
       Copilot surfaces a Protocol Direction card (when Generate Protocol is clicked) from the recommendation engine, with citations. 
   
