@@ -28,7 +28,8 @@
   
       **“Grounded in the patient’s own data — not a hallucination.”**
 
-YOU CAN CHOOSE TEST WITHOUT THE SCRIPT TOO. THE SCRIPT ALLOWS TESTING ALL THE FEATURES.
+YOU CAN CHOOSE TO TEST WITHOUT THE SCRIPT TOO. THE SCRIPT ALLOWS TESTING ALL THE FEATURES.
+
 5. Leave the call once finished.
 
 
