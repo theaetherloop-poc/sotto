@@ -6,7 +6,6 @@ import asyncio
 import json
 from datetime import datetime, timezone
 
-import pytest
 
 from sotto.cue_engine import CueEngine
 from sotto.sinks import Card
@@ -140,7 +139,10 @@ async def test_dedup_against_recent_card():
         calls += 1
         return CARD_JSON  # same card every time
 
-    engine = CueEngine(llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01)
+    # cooldown disabled so the second eval reaches the LLM and exercises dedup.
+    engine = CueEngine(
+        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, cooldown_seconds=0
+    )
     await _seed_window(tx)
     await engine.on_new_final(_ev())
     await asyncio.sleep(0.1)
@@ -150,6 +152,72 @@ async def test_dedup_against_recent_card():
 
     assert calls == 2
     assert len(sink.cards) == 1  # second was deduped
+
+
+SECOND_CARD_JSON = json.dumps(
+    {
+        "action": "card",
+        "type": "suggested_question",
+        "content": "Explore gut history given the antibiotic exposure.",
+        "rationale": "New topic opened; gut-immune axis worth probing.",
+        "triggered_by_speaker": "patient",
+        "transcript_snippet": "my stomach has been off",
+    }
+)
+
+
+async def test_cooldown_suppresses_card_within_window():
+    tx = MergedTranscript()
+    sink = RecordingSink()
+    calls = 0
+
+    async def llm(_msg):
+        nonlocal calls
+        calls += 1
+        return CARD_JSON if calls == 1 else SECOND_CARD_JSON
+
+    engine = CueEngine(
+        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, cooldown_seconds=30
+    )
+    await _seed_window(tx)
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+    assert len(sink.cards) == 1
+    assert calls == 1
+
+    # A second trigger well within the cooldown window short-circuits before the LLM call.
+    await _seed_window(tx, text="my stomach has been off")
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+    assert calls == 1  # LLM never called again
+    assert len(sink.cards) == 1
+
+
+async def test_cooldown_expiry_allows_next_card():
+    tx = MergedTranscript()
+    sink = RecordingSink()
+    calls = 0
+
+    async def llm(_msg):
+        nonlocal calls
+        calls += 1
+        return CARD_JSON if calls == 1 else SECOND_CARD_JSON
+
+    engine = CueEngine(
+        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, cooldown_seconds=0.05
+    )
+    await _seed_window(tx)
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+    assert len(sink.cards) == 1
+
+    # Wait past the cooldown; a distinct card on a new topic now emits.
+    await asyncio.sleep(0.1)
+    await _seed_window(tx, text="my stomach has been off")
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+    assert len(sink.cards) == 2
+    assert sink.cards[1].content.startswith("Explore gut history")
 
 
 async def test_malformed_llm_response_is_ignored():
@@ -232,8 +300,14 @@ async def test_metrics_records_dedup_dropped():
     async def llm(_msg):
         return CARD_JSON
 
+    # cooldown disabled so the second eval reaches the LLM and is deduped (not cooldown-dropped).
     engine = CueEngine(
-        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, metrics=metrics
+        llm_call=llm,
+        transcript=tx,
+        sinks=[sink],
+        debounce_seconds=0.01,
+        cooldown_seconds=0,
+        metrics=metrics,
     )
     await _seed_window(tx)
     await engine.on_new_final(_ev())
@@ -261,6 +335,73 @@ async def test_card_with_surrounding_prose_is_parsed():
     await engine.on_new_final(_ev())
     await asyncio.sleep(0.1)
 
+    assert len(sink.cards) == 1
+
+
+async def test_retrieve_block_is_injected_into_llm_message():
+    tx = MergedTranscript()
+    sink = RecordingSink()
+    seen: list[str] = []
+
+    async def llm(msg):
+        seen.append(msg)
+        return '{"action": "none"}'
+
+    async def retrieve(window):
+        assert "really tired" in window  # retrieval sees the transcript window
+        return "PATIENT_CONTEXT (retrieved):\n- [lab report] TSH high-normal."
+
+    engine = CueEngine(
+        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, retrieve=retrieve
+    )
+    await _seed_window(tx)
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+
+    assert len(seen) == 1
+    # The retrieved block is prepended ahead of the recent-cards/transcript sections.
+    assert seen[0].startswith("PATIENT_CONTEXT (retrieved):")
+    assert "TSH high-normal" in seen[0]
+    assert "RECENT_CARDS" in seen[0]
+    assert "TRANSCRIPT" in seen[0]
+
+
+async def test_no_retrieve_omits_patient_context():
+    tx = MergedTranscript()
+    sink = RecordingSink()
+    seen: list[str] = []
+
+    async def llm(msg):
+        seen.append(msg)
+        return '{"action": "none"}'
+
+    engine = CueEngine(llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01)
+    await _seed_window(tx)
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+
+    assert len(seen) == 1
+    assert "PATIENT_CONTEXT" not in seen[0]
+
+
+async def test_retrieve_failure_does_not_block_evaluation():
+    tx = MergedTranscript()
+    sink = RecordingSink()
+
+    async def llm(_msg):
+        return CARD_JSON
+
+    async def boom(_window):
+        raise RuntimeError("moss down")
+
+    engine = CueEngine(
+        llm_call=llm, transcript=tx, sinks=[sink], debounce_seconds=0.01, retrieve=boom
+    )
+    await _seed_window(tx)
+    await engine.on_new_final(_ev())
+    await asyncio.sleep(0.1)
+
+    # Retrieval failed, but the cue engine still evaluated and emitted the card.
     assert len(sink.cards) == 1
 
 

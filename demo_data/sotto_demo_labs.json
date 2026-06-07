@@ -1,0 +1,69 @@
+{
+  "patient_id": "demo-maya-chen",
+  "demo_note": "Simulated EHR lab history aligned to The Aether Loop FEMALE panel and the Quest-format PDF (maya_chen_quest_report_2026-05-20.pdf). Historical panels carry the trended markers; the 2026-05-20 panel is the full 'uploaded' result. No real PHI.",
+  "panel": "Aether Loop Female (42 biomarkers)",
+  "reference_ranges": {
+    "ferritin_ng_ml": { "low": 16, "high": 232, "note": "value of 18 is low-normal; the DOWNWARD TREND + low iron saturation is the clinical signal, not a lab flag" },
+    "iron_total_mcg_dl": { "low": 40, "high": 190 },
+    "iron_saturation_pct": { "low": 15, "high": 55 },
+    "uibc_mcg_dl": { "low": 111, "high": 343 },
+    "vitamin_d_25oh_ng_ml": { "low": 30, "high": 100 },
+    "hs_crp_mg_l": { "low": 0.0, "high": 1.0 },
+    "tsh_mIU_l": { "low": 0.40, "high": 4.50 }
+  },
+  "trended_markers_history": [
+    { "collected": "2025-03-04", "ferritin_ng_ml": 52, "vitamin_d_25oh_ng_ml": 31, "iron_saturation_pct": 24, "hs_crp_mg_l": 0.9, "tsh_mIU_l": 2.8 },
+    { "collected": "2025-08-12", "ferritin_ng_ml": 41, "vitamin_d_25oh_ng_ml": 28, "iron_saturation_pct": 20, "hs_crp_mg_l": 1.3, "tsh_mIU_l": 3.1 },
+    { "collected": "2026-01-10", "ferritin_ng_ml": 34, "vitamin_d_25oh_ng_ml": 25, "iron_saturation_pct": 16, "hs_crp_mg_l": 1.7, "tsh_mIU_l": 3.5 },
+    { "collected": "2026-05-20", "ferritin_ng_ml": 18, "vitamin_d_25oh_ng_ml": 22, "iron_saturation_pct": 11, "hs_crp_mg_l": 2.1, "tsh_mIU_l": 3.8 }
+  ],
+  "uploaded_panel_2026_05_20": {
+    "source_file": "maya_chen_quest_report_2026-05-20.pdf",
+    "collected": "2026-05-20",
+    "results": {
+      "iron_total_mcg_dl": 42,
+      "ferritin_ng_ml": 18,
+      "iron_saturation_pct": 11,
+      "uibc_mcg_dl": 365,
+      "total_cholesterol_mg_dl": 195,
+      "hdl_mg_dl": 58,
+      "ldl_calc_mg_dl": 112,
+      "vldl_mg_dl": 18,
+      "triglycerides_mg_dl": 92,
+      "apob_mg_dl": 88,
+      "apoa1_mg_dl": 152,
+      "lp_a_nmol_l": 22,
+      "hba1c_pct": 5.4,
+      "eag_mg_dl": 108,
+      "c_peptide_ng_ml": 1.8,
+      "calcium_mg_dl": 9.3,
+      "albumin_g_dl": 4.4,
+      "total_protein_g_dl": 6.9,
+      "total_bilirubin_mg_dl": 0.5,
+      "direct_bilirubin_mg_dl": 0.1,
+      "alt_u_l": 22,
+      "ast_u_l": 21,
+      "alp_u_l": 62,
+      "bun_mg_dl": 12,
+      "creatinine_mg_dl": 0.82,
+      "egfr": 98,
+      "vitamin_d_25oh_ng_ml": 22,
+      "hs_crp_mg_l": 2.1,
+      "tsh_mIU_l": 3.8,
+      "fsh_mIU_ml": 6.2,
+      "lh_mIU_ml": 7.1,
+      "estradiol_pg_ml": 48,
+      "daytime_cortisol_mcg_dl": 12.0,
+      "dheas_mcg_dl": 145
+    },
+    "flags": [
+      { "marker": "iron_saturation_pct", "value": 11, "status": "LOW" },
+      { "marker": "uibc_mcg_dl", "value": 365, "status": "HIGH" },
+      { "marker": "vitamin_d_25oh_ng_ml", "value": 22, "status": "LOW" },
+      { "marker": "hs_crp_mg_l", "value": 2.1, "status": "ELEVATED" },
+      { "marker": "ldl_calc_mg_dl", "value": 112, "status": "HIGH" },
+      { "marker": "ferritin_ng_ml", "value": 18, "status": "LOW-NORMAL but trending down (52->41->34->18 over 14 months)" },
+      { "marker": "tsh_mIU_l", "value": 3.8, "status": "HIGH-NORMAL and creeping up (2.8->3.8)" }
+    ]
+  }
+}

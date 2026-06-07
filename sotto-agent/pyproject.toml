@@ -8,6 +8,7 @@ dependencies = [
     "livekit-api~=1.0",
     "python-dotenv>=1.0",
     "rich>=13.7",
+    "moss>=1.4",
 ]
 
 [project.optional-dependencies]

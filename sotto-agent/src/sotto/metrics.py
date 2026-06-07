@@ -31,7 +31,7 @@ from typing import Any, Iterable, Literal, Protocol
 logger = logging.getLogger(__name__)
 
 
-CueAction = Literal["card", "none", "parse_error", "llm_error"]
+CueAction = Literal["card", "none", "parse_error", "llm_error", "cooldown"]
 
 # Rolling window used to compute p50/p95 for STT and LLM. Bounded so memory stays flat on
 # long sessions; large enough to be meaningful in a typical 20-minute consult.

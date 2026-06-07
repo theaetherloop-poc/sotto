@@ -1,0 +1,48 @@
+{
+  "patient_id": "demo-maya-chen",
+  "source": "OURA Ring",
+  "demo_note": "Simulated but demonstrative long-term wearable data. The 6-month monthly trend shows a slow decline; the last 3 weeks show a sharper drop. The point: long-term data reveals a pattern a single reading would miss.",
+  "baseline_90d": {
+    "avg_sleep_hours": 7.1,
+    "avg_hrv_ms": 48,
+    "avg_resting_hr_bpm": 61,
+    "avg_readiness_score": 82
+  },
+  "monthly_trend_6mo": [
+    { "month": "2025-12", "avg_sleep_hours": 7.2, "avg_hrv_ms": 49, "avg_resting_hr_bpm": 60, "avg_readiness": 83 },
+    { "month": "2026-01", "avg_sleep_hours": 7.0, "avg_hrv_ms": 47, "avg_resting_hr_bpm": 61, "avg_readiness": 81 },
+    { "month": "2026-02", "avg_sleep_hours": 6.7, "avg_hrv_ms": 45, "avg_resting_hr_bpm": 62, "avg_readiness": 78 },
+    { "month": "2026-03", "avg_sleep_hours": 6.4, "avg_hrv_ms": 43, "avg_resting_hr_bpm": 64, "avg_readiness": 74 },
+    { "month": "2026-04", "avg_sleep_hours": 6.0, "avg_hrv_ms": 41, "avg_resting_hr_bpm": 65, "avg_readiness": 70 },
+    { "month": "2026-05", "avg_sleep_hours": 5.6, "avg_hrv_ms": 39, "avg_resting_hr_bpm": 67, "avg_readiness": 65 }
+  ],
+  "recent_21d": {
+    "avg_sleep_hours": 5.5,
+    "avg_hrv_ms": 38,
+    "avg_resting_hr_bpm": 68,
+    "avg_readiness_score": 64,
+    "hrv_change_vs_baseline_pct": -20.8,
+    "sleep_change_vs_baseline_pct": -22.5
+  },
+  "anomalies": [
+    "HRV has declined steadily for ~6 months and is now ~21% below the 90-day baseline",
+    "Average sleep fell from 7.1h to 5.5h over the same period, sharpest in the last 3 weeks",
+    "Resting heart rate up ~7 bpm vs baseline"
+  ],
+  "daily_last_14d": [
+    { "date": "2026-05-23", "sleep_hours": 5.8, "hrv_ms": 41, "resting_hr_bpm": 66, "readiness": 67 },
+    { "date": "2026-05-24", "sleep_hours": 6.1, "hrv_ms": 43, "resting_hr_bpm": 65, "readiness": 70 },
+    { "date": "2026-05-25", "sleep_hours": 5.2, "hrv_ms": 37, "resting_hr_bpm": 69, "readiness": 61 },
+    { "date": "2026-05-26", "sleep_hours": 5.0, "hrv_ms": 35, "resting_hr_bpm": 70, "readiness": 58 },
+    { "date": "2026-05-27", "sleep_hours": 5.6, "hrv_ms": 39, "resting_hr_bpm": 67, "readiness": 64 },
+    { "date": "2026-05-28", "sleep_hours": 5.4, "hrv_ms": 38, "resting_hr_bpm": 68, "readiness": 63 },
+    { "date": "2026-05-29", "sleep_hours": 5.1, "hrv_ms": 36, "resting_hr_bpm": 69, "readiness": 60 },
+    { "date": "2026-05-30", "sleep_hours": 5.9, "hrv_ms": 40, "resting_hr_bpm": 66, "readiness": 66 },
+    { "date": "2026-05-31", "sleep_hours": 5.3, "hrv_ms": 37, "resting_hr_bpm": 68, "readiness": 62 },
+    { "date": "2026-06-01", "sleep_hours": 5.5, "hrv_ms": 38, "resting_hr_bpm": 68, "readiness": 64 },
+    { "date": "2026-06-02", "sleep_hours": 5.2, "hrv_ms": 36, "resting_hr_bpm": 69, "readiness": 61 },
+    { "date": "2026-06-03", "sleep_hours": 5.7, "hrv_ms": 39, "resting_hr_bpm": 67, "readiness": 65 },
+    { "date": "2026-06-04", "sleep_hours": 5.4, "hrv_ms": 38, "resting_hr_bpm": 68, "readiness": 63 },
+    { "date": "2026-06-05", "sleep_hours": 5.0, "hrv_ms": 35, "resting_hr_bpm": 70, "readiness": 59 }
+  ]
+}

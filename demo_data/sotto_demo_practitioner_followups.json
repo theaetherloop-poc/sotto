@@ -1,0 +1,26 @@
+{
+  "_demo_note": "Practitioner pre-visit follow-up questions for Maya Chen, produced by the doctor's profile-analysis step BEFORE the consult. In production this is its own record set (e.g. a practitioner_followups table keyed by patient), separate from intake. OPTIONAL input to the text layer.",
+  "patient_id": "demo-maya-chen",
+  "source": "dr_okafor_profile_review",
+  "generated_at": "2026-05-22",
+  "followups": [
+    {
+      "id": "pf_1",
+      "question_text": "Confirm whether the recently heavier menstrual flow correlates with the falling ferritin.",
+      "topic": "hormone / iron",
+      "asked": false
+    },
+    {
+      "id": "pf_2",
+      "question_text": "Ask about ventilation and PPE use in the print studio.",
+      "topic": "environment / detox",
+      "asked": false
+    },
+    {
+      "id": "pf_3",
+      "question_text": "Screen thyroid given high-normal TSH with fatigue; consider thyroid antibodies.",
+      "topic": "hormone / thyroid",
+      "asked": false
+    }
+  ]
+}

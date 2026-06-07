@@ -1,0 +1,21 @@
+{
+  "_demo_note": "Parsed output of a PATIENT-UPLOADED document (the lab PDF), as a document parser (e.g. Unsiloed) would emit. This is a separate source from EHR_DATA (a structured feed) — here the patient drops in a PDF and it gets parsed. OPTIONAL input. Raw file: maya_chen_quest_report_2026-05-20.pdf.",
+  "patient_id": "demo-maya-chen",
+  "source_file": "maya_chen_quest_report_2026-05-20.pdf",
+  "doc_type": "lab_report",
+  "lab_name": "Quest-format (synthetic)",
+  "collected": "2026-05-20",
+  "parsed_at": "2026-05-20T09:50:00Z",
+  "parser": "unsiloed (demo)",
+  "extracted_markers": [
+    {"name": "Ferritin", "value": 18, "unit": "ng/mL", "ref_range": "16-232", "flag": ""},
+    {"name": "Iron, Total", "value": 42, "unit": "mcg/dL", "ref_range": "40-190", "flag": ""},
+    {"name": "Iron Saturation", "value": 11, "unit": "%", "ref_range": "15-55", "flag": "L"},
+    {"name": "UIBC", "value": 365, "unit": "mcg/dL", "ref_range": "111-343", "flag": "H"},
+    {"name": "25-OH Vitamin D", "value": 22, "unit": "ng/mL", "ref_range": "30-100", "flag": "L"},
+    {"name": "hs-CRP", "value": 2.1, "unit": "mg/L", "ref_range": "<1.0", "flag": "H"},
+    {"name": "TSH", "value": 3.8, "unit": "mIU/L", "ref_range": "0.40-4.50", "flag": ""},
+    {"name": "Calculated LDL-Cholesterol", "value": 112, "unit": "mg/dL", "ref_range": "<100", "flag": "H"}
+  ],
+  "interpretive_comment": "Ferritin low-normal and declining across prior panels; low iron saturation with elevated UIBC consistent with depleting iron stores. Vitamin D insufficient; hs-CRP mildly elevated; TSH high-normal."
+}

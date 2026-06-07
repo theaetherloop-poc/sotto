@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -20,7 +21,9 @@ from livekit.agents import AgentServer, AutoSubscribe, JobContext, llm, stt
 from livekit.agents.inference import LLM as InferenceLLM
 from livekit.agents.inference import STT as InferenceSTT
 
+from sotto.aether_kb import KbLibrary, format_kb_candidates
 from sotto.cue_engine import SYSTEM_PROMPT, CueEngine
+from sotto.patient_kb import PatientKB
 from sotto.metrics import (
     JsonlMetricsEventSink,
     JsonlMetricsSessionSink,
@@ -72,6 +75,7 @@ def _attach_stt_plugin_metrics(stt_instance, metrics: MetricsCollector | None, l
     if metrics is None:
         return
     try:
+
         @stt_instance.on("metrics_collected")
         def _on_stt_metrics(ev) -> None:  # ev: STTMetrics
             # No speaker context at the plugin level (one plugin per track). The audio duration
@@ -101,6 +105,7 @@ def _attach_llm_plugin_metrics(
             return None
 
     try:
+
         @llm_instance.on("metrics_collected")
         def _on_llm_metrics(ev) -> None:  # ev: LLMMetrics
             event = LLMEvent(
@@ -252,6 +257,29 @@ async def entrypoint(ctx: JobContext) -> None:
     llm_instance = InferenceLLM(model=LLM_MODEL)
     _attach_llm_plugin_metrics(llm_instance, metrics, asyncio.get_running_loop())
 
+    # Moss-backed grounding. Two indexes (see patient_kb.py / aether_kb.py):
+    #   PATIENT_CONTEXT — this patient's full Phase 1+2 intake, loaded once and injected each call.
+    #   KB_CANDIDATES   — the shared Aether Loop question library, retrieved per transcript window.
+    # When MOSS_PROJECT_ID is unset, grounding is disabled and the cue engine runs without it
+    # rather than inventing patient data.
+    retrieve = None
+    if os.getenv("MOSS_PROJECT_ID"):
+        patient_kb = PatientKB()
+        kb_library = KbLibrary()
+        await asyncio.gather(patient_kb.load(), kb_library.load())
+        patient_context = await patient_kb.load_summary()
+
+        async def retrieve(window: str) -> str:
+            blocks = []
+            if patient_context:
+                blocks.append(patient_context)
+            kb_block = format_kb_candidates(await kb_library.retrieve(window))
+            if kb_block:
+                blocks.append(kb_block)
+            return "\n\n".join(blocks)
+    else:
+        logger.warning("MOSS_PROJECT_ID not set — Moss grounding (PATIENT_CONTEXT/KB) disabled")
+
     sinks = [
         StdoutSink(),
         DataChannelSink(ctx.room),
@@ -262,6 +290,7 @@ async def entrypoint(ctx: JobContext) -> None:
         transcript=transcript,
         sinks=sinks,
         metrics=metrics,
+        retrieve=retrieve,
     )
     transcript.on_new_final(cue_engine.on_new_final)
     transcript.on_new_final(TranscriptFileWriter(Path("logs/sotto-transcript.jsonl")))
@@ -325,9 +354,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
     ctx.room.on("disconnected", _on_disconnected)
 
-    logger.info(
-        "sotto ready — waiting for participants with identity in %s", ALLOWED_SPEAKERS
-    )
+    logger.info("sotto ready — waiting for participants with identity in %s", ALLOWED_SPEAKERS)
     await disconnected.wait()
 
     for task in track_tasks.values():

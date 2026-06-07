@@ -1,0 +1,53 @@
+{
+  "patient_id": "demo-maya-chen",
+  "demo_note": "Synthetic patient, expressed in The Aether Loop's real Phase 1/2/3 schema (field names + option values match the intake). No real PHI.",
+  "phase1": {
+    "age": 41,
+    "biological_sex": "Female",
+    "weight_lbs": 150,
+    "height_ft": 5,
+    "height_in": 5,
+    "ancestry": "Asian",
+    "medical_history": ["Anxiety disorder"],
+    "surgeries": "NA",
+    "allergies": [{ "allergen": "Nuts", "reaction": "Hives" }],
+    "prescription_medications": [],
+    "supplements": ["Magnesium glycinate 200mg", "Vitamin D3 2000 IU"],
+    "complementary_approaches": ["Functional Medicine"],
+    "wearable_devices": ["OURA Ring"]
+  },
+  "phase2": {
+    "health_goals": ["More energy", "Lose ~10 lbs", "Clearer skin"],
+    "family_history": { "Mother": ["Overactive thyroid"], "Father": ["Diabetes — Non-Insulin"] },
+    "adverse_reactions": false,
+    "antibiotics_as_child": true,
+    "tobacco": false,
+    "alcohol": { "uses": true, "frequency": "Monthly" },
+    "recreational_drugs": false,
+    "occupation": "Owner of a small screen-printing studio",
+    "work_stress_1_10": 8,
+    "exercise_days_per_week": 2,
+    "sunlight": "3 days/week, ~20 min",
+    "sleep": {
+      "avg_hours_bucket": "Less than 6 hours",
+      "struggle_to_fall_asleep": false,
+      "wake_during_night": true,
+      "wake_count": 2,
+      "wake_to_urinate": 1,
+      "wake_refreshed": false,
+      "snore_or_apnea": "Not sure"
+    },
+    "diet_pattern": [],
+    "eating_out": "More than 2 times per week",
+    "born_c_section": false,
+    "childhood_sugary_intake": true,
+    "mercury_fillings_removed": false,
+    "oral_hygiene": "Yes, both daily",
+    "chemical_toxin_exposure": {
+      "has_exposure": true,
+      "types": ["Industrial solvents / glues"],
+      "notes": "Screen-printing studio; daily; ~4 years"
+    },
+    "mold_moisture_exposure": {
+      "has_exposure": true,
+      "notes": "Damp basement sto

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
 from pathlib import Path
 
-import pytest
 from rich.console import Console
 
 from sotto.sinks import Card, DataChannelSink, JsonlSink, StdoutSink
@@ -32,10 +30,14 @@ def test_card_serializes_with_all_fields():
         "rationale",
         "triggered_by_speaker",
         "transcript_snippet",
+        "source",
+        "kb_id",
         "triggered_at",
     }
     assert set(payload.keys()) == expected_keys
     assert payload["type"] == "suggested_question"
+    assert payload["source"] == "adaptive"
+    assert payload["kb_id"] is None
 
 
 async def test_stdout_sink_writes_card_content():

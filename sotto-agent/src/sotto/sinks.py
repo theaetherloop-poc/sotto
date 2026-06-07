@@ -17,6 +17,7 @@ from rich.text import Text
 logger = logging.getLogger(__name__)
 
 CardType = Literal["suggested_question", "patient_context", "protocol_direction"]
+CardSource = Literal["kb", "adaptive"]
 
 
 @dataclass
@@ -26,6 +27,8 @@ class Card:
     rationale: str
     triggered_by_speaker: str
     transcript_snippet: str
+    source: CardSource = "adaptive"
+    kb_id: str | None = None
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     triggered_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
