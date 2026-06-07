@@ -44,6 +44,18 @@ interface AppProps {
 export function App({ appConfig }: AppProps) {
   const [{ role, room }] = useState(resolveConsultParams);
 
+  // Pin the (otherwise randomly generated) room into the URL on first load so reloads reuse the
+  // same room — otherwise the doctor jumps to a fresh room on every reload while the patient link
+  // already shared still points at the old one, leaving doctor and patient in separate rooms.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !room) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('room')?.trim()) return;
+    params.set('room', room);
+    if (!params.get('role')) params.set('role', role);
+    window.history.replaceState(null, '', `?${params.toString()}`);
+  }, [room, role]);
+
   const tokenSource = useMemo(() => getSottoTokenSource(role, room), [role, room]);
 
   // No agentName: the Sotto agent uses automatic dispatch, so we don't wait for a named agent.

@@ -6,6 +6,18 @@ const textDecoder = new TextDecoder();
 
 export type SottoCueType = 'suggested_question' | 'patient_context' | 'protocol_direction';
 
+export type SottoCueSource = 'kb' | 'adaptive';
+
+/** A single labelled data row inside a multi-line patient_context card (demo-script only). */
+export type SottoCueRow = {
+  heading: string;
+  detail: string;
+  /** Source chip text, e.g. "Labs" or "OURA". */
+  source: string;
+  /** Detail-text emphasis: 'red' for an abnormal/declining value, 'neutral' otherwise. */
+  tone: 'red' | 'neutral';
+};
+
 export type SottoCue = {
   id: string;
   type: SottoCueType;
@@ -13,9 +25,28 @@ export type SottoCue = {
   rationale: string;
   triggeredBySpeaker: string;
   transcriptSnippet: string;
+  /** Whether the card came from the KB library or was generated adaptively. */
+  source: SottoCueSource;
   /** ISO timestamp string from the agent */
   triggeredAt: string;
+  /** Optional section-label override (demo-script cards). */
+  header?: string;
+  /** Optional multi-row body (demo-script patient_context cards). */
+  rows?: SottoCueRow[];
 };
+
+function parseRows(value: unknown): SottoCueRow[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const rows = value
+    .filter((r): r is Record<string, unknown> => !!r && typeof r === 'object')
+    .map((r) => ({
+      heading: typeof r.heading === 'string' ? r.heading : '',
+      detail: typeof r.detail === 'string' ? r.detail : '',
+      source: typeof r.source === 'string' ? r.source : '',
+      tone: r.tone === 'red' ? ('red' as const) : ('neutral' as const),
+    }));
+  return rows.length > 0 ? rows : undefined;
+}
 
 const MAX_CUES_DEFAULT = 20;
 const VALID_TYPES = new Set<SottoCueType>([
@@ -36,7 +67,9 @@ function parsePayload(payload: Uint8Array): SottoCue | null {
       return null;
     }
     const content = typeof data.content === 'string' ? data.content : '';
-    if (!content) {
+    const rows = parseRows(data.rows);
+    // A card must carry either text content or structured rows; otherwise there's nothing to show.
+    if (!content && !rows) {
       return null;
     }
     return {
@@ -47,8 +80,11 @@ function parsePayload(payload: Uint8Array): SottoCue | null {
       triggeredBySpeaker:
         typeof data.triggered_by_speaker === 'string' ? data.triggered_by_speaker : '',
       transcriptSnippet: typeof data.transcript_snippet === 'string' ? data.transcript_snippet : '',
+      source: data.source === 'kb' ? 'kb' : 'adaptive',
       triggeredAt:
         typeof data.triggered_at === 'string' ? data.triggered_at : new Date().toISOString(),
+      header: typeof data.header === 'string' ? data.header : undefined,
+      rows,
     };
   } catch (error) {
     console.warn('Failed to parse sotto_cue payload', error);

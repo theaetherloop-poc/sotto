@@ -9,8 +9,8 @@ import {
   type AgentControlBarControls,
 } from '@/components/agents-ui/agent-control-bar';
 import { Shimmer } from '@/components/ai-elements/shimmer';
-import { PatientShareLink } from '@/components/app/patient-share-link';
-import { SottoCuePanel } from '@/components/app/sotto-cue-panel';
+import { ConsultChatPanel } from '@/components/app/sotto/consult-chat-panel';
+import { SottoConsultDashboard } from '@/components/app/sotto/consult-dashboard';
 import { useSottoCues } from '@/hooks/useSottoCues';
 import { cn } from '@/lib/shadcn/utils';
 import { TileLayout } from './tile-view';
@@ -216,79 +216,100 @@ export function AgentSessionView_01({
       className={cn('bg-background relative z-10 h-full w-full overflow-hidden', className)}
       {...props}
     >
-      <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />
+      {/* Patient/agent visualizer chrome — not rendered for the doctor's white consult dashboard. */}
+      {!isDoctor && <Fade top className="absolute inset-x-4 top-0 z-10 h-40" />}
       {/* transcript */}
 
-      <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
-        <AnimatePresence>
-          {chatOpen && (
-            <motion.div
-              {...CHAT_MOTION_PROPS}
-              className="flex h-full w-full flex-col gap-4 space-y-3 transition-opacity duration-300 ease-out"
-            >
-              <AgentChatTranscript
-                agentState={agentState}
-                messages={messages}
-                className="mx-auto w-full max-w-2xl [&_.is-user>div]:rounded-[22px] [&>div>div]:px-4 [&>div>div]:pt-40 md:[&>div>div]:px-6"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      {/* Doctor-only co-pilot rail: live cue cards from the Sotto agent + the patient join
-          link. Renders beside the visualizer, inside the RoomContext provider. */}
-      {isDoctor && (
-        <div className="pointer-events-auto absolute top-0 right-0 bottom-[170px] z-[60] hidden w-full max-w-sm space-y-3 overflow-y-auto overscroll-contain px-4 pt-40 pb-4 md:block">
-          {patientShareUrl && <PatientShareLink url={patientShareUrl} />}
-          <SottoCuePanel cues={cues} />
-        </div>
-      )}
-      {/* Tile layout */}
-      <TileLayout
-        chatOpen={chatOpen}
-        audioVisualizerType={audioVisualizerType}
-        audioVisualizerColor={audioVisualizerColor}
-        audioVisualizerColorShift={audioVisualizerColorShift}
-        audioVisualizerBarCount={audioVisualizerBarCount}
-        audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
-        audioVisualizerRadialRadius={audioVisualizerRadialRadius}
-        audioVisualizerGridRowCount={audioVisualizerGridRowCount}
-        audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
-        audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
-      />
-      {/* Bottom */}
-      <motion.div
-        {...BOTTOM_VIEW_MOTION_PROPS}
-        className="absolute inset-x-3 bottom-0 z-50 md:inset-x-12"
-      >
-        {/* Pre-connect message */}
-        {isPreConnectBufferEnabled && (
+      {!isDoctor && (
+        <div className="absolute top-0 bottom-[135px] flex w-full flex-col md:bottom-[170px]">
           <AnimatePresence>
-            {messages.length === 0 && (
-              <MotionMessage
-                key="pre-connect-message"
-                duration={2}
-                aria-hidden={messages.length > 0}
-                {...SHIMMER_MOTION_PROPS}
-                className="pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
+            {chatOpen && (
+              <motion.div
+                {...CHAT_MOTION_PROPS}
+                className="flex h-full w-full flex-col gap-4 space-y-3 transition-opacity duration-300 ease-out"
               >
-                {preConnectMessage}
-              </MotionMessage>
+                <AgentChatTranscript
+                  agentState={agentState}
+                  messages={messages}
+                  className="mx-auto w-full max-w-2xl [&_.is-user>div]:rounded-[22px] [&>div>div]:px-4 [&>div>div]:pt-40 md:[&>div>div]:px-6"
+                />
+              </motion.div>
             )}
           </AnimatePresence>
-        )}
-        <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
-          <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
-          <AgentControlBar
-            variant="livekit"
-            controls={controls}
-            isChatOpen={chatOpen}
-            isConnected={session.isConnected}
-            onDisconnect={session.end}
-            onIsChatOpenChange={setChatOpen}
-          />
         </div>
-      </motion.div>
+      )}
+      {/* Doctor co-pilot dashboard: mockup-faithful consult screen (top bar, loaded-context chips,
+          live transcript + cue rail) plus the static protocol view. Fills the area above the
+          control bar and replaces the audio visualizer for the doctor. The patient never loads
+          this view — they join via the shared meet.livekit.io link. */}
+      {isDoctor ? (
+        <>
+          <SottoConsultDashboard
+            cues={cues}
+            connected={session.isConnected}
+            patientShareUrl={patientShareUrl}
+            onEndCall={session.end}
+            chatOpen={chatOpen}
+            onToggleChat={() => setChatOpen((v) => !v)}
+          />
+          {chatOpen && (
+            <ConsultChatPanel
+              messages={messages}
+              agentState={agentState}
+              onClose={() => setChatOpen(false)}
+            />
+          )}
+        </>
+      ) : (
+        /* Tile layout (patient/visualizer) */
+        <TileLayout
+          chatOpen={chatOpen}
+          audioVisualizerType={audioVisualizerType}
+          audioVisualizerColor={audioVisualizerColor}
+          audioVisualizerColorShift={audioVisualizerColorShift}
+          audioVisualizerBarCount={audioVisualizerBarCount}
+          audioVisualizerRadialBarCount={audioVisualizerRadialBarCount}
+          audioVisualizerRadialRadius={audioVisualizerRadialRadius}
+          audioVisualizerGridRowCount={audioVisualizerGridRowCount}
+          audioVisualizerGridColumnCount={audioVisualizerGridColumnCount}
+          audioVisualizerWaveLineWidth={audioVisualizerWaveLineWidth}
+        />
+      )}
+      {/* Bottom control bar — the doctor's controls live in the white dashboard top bar instead. */}
+      {!isDoctor && (
+        <motion.div
+          {...BOTTOM_VIEW_MOTION_PROPS}
+          className="absolute inset-x-3 bottom-0 z-50 md:inset-x-12"
+        >
+          {/* Pre-connect message */}
+          {isPreConnectBufferEnabled && (
+            <AnimatePresence>
+              {messages.length === 0 && (
+                <MotionMessage
+                  key="pre-connect-message"
+                  duration={2}
+                  aria-hidden={messages.length > 0}
+                  {...SHIMMER_MOTION_PROPS}
+                  className="pointer-events-none mx-auto block w-full max-w-2xl pb-4 text-center text-sm font-semibold"
+                >
+                  {preConnectMessage}
+                </MotionMessage>
+              )}
+            </AnimatePresence>
+          )}
+          <div className="bg-background relative mx-auto max-w-2xl pb-3 md:pb-12">
+            <Fade bottom className="absolute inset-x-0 top-0 h-4 -translate-y-full" />
+            <AgentControlBar
+              variant="livekit"
+              controls={controls}
+              isChatOpen={chatOpen}
+              isConnected={session.isConnected}
+              onDisconnect={session.end}
+              onIsChatOpenChange={setChatOpen}
+            />
+          </div>
+        </motion.div>
+      )}
     </section>
   );
 }

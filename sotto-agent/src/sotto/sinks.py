@@ -32,6 +32,11 @@ class Card:
     # Model's own 0-1 estimate of how useful surfacing this card is RIGHT NOW. The engine gates
     # on it (emit only above a threshold) in place of a fixed time-based cooldown.
     usefulness: float = 1.0
+    # Optional presentation overrides used ONLY by the flag-gated demo script (never the LLM
+    # cue engine). ``header`` replaces the card's default section label; ``rows`` renders a
+    # multi-line patient_context card (each row: heading/detail/source/tone) as in the UI mockup.
+    header: str | None = None
+    rows: list[dict] | None = None
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     triggered_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -98,3 +103,33 @@ class JsonlSink:
         # Synchronous append — payload is tiny, blocking time is negligible.
         with self._path.open("a", encoding="utf-8") as f:
             f.write(line)
+
+
+class TranscriptChannelSink:
+    """Publish each final transcript line on the `sotto_transcript` data topic.
+
+    Registered via ``MergedTranscript.on_new_final`` (an ``OnNewFinal`` callable), so it streams
+    every finalized utterance to the doctor dashboard, mirroring ``DataChannelSink``'s envelope.
+    """
+
+    TOPIC = "sotto_transcript"
+
+    def __init__(self, room) -> None:  # rtc.Room — kept untyped to avoid import at module load
+        self._room = room
+
+    async def __call__(self, event) -> None:  # event: TranscriptEvent
+        envelope = {
+            "type": self.TOPIC,
+            "data": {
+                "timestamp": event.timestamp.isoformat(),
+                "speaker": event.speaker,
+                "text": event.text,
+            },
+        }
+        payload = json.dumps(envelope).encode("utf-8")
+        try:
+            await self._room.local_participant.publish_data(
+                payload, reliable=True, topic=self.TOPIC
+            )
+        except Exception:  # noqa: BLE001 — best-effort, don't crash the transcript pipeline
+            logger.exception("TranscriptChannelSink.publish_data failed")

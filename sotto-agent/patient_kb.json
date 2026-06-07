@@ -2,46 +2,82 @@
   {
     "id": "maya_intake_demographics",
     "text": "Maya Chen, 41-year-old Asian female (5'5\", 150 lbs). Stated health goals: more energy, lose ~10 lbs, clearer skin. Practices Functional Medicine and wears an OURA Ring. Chief presentation maps to low energy / fatigue.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "intake form (Phase 1)", "phase": "phase1" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "intake form (Phase 1)",
+      "phase": "phase1"
+    }
   },
   {
     "id": "maya_history_meds_allergies",
     "text": "Medical history: anxiety disorder. No surgeries. Allergy: nuts (reaction: hives). No prescription medications. Supplements: magnesium glycinate 200mg and vitamin D3 2000 IU daily.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "intake form (Phase 1)", "phase": "phase1" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "intake form (Phase 1)",
+      "phase": "phase1"
+    }
   },
   {
     "id": "maya_family_history",
     "text": "Family history: mother has an overactive thyroid (hyperthyroidism); father has type 2 (non-insulin-dependent) diabetes.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "intake form (Phase 2)", "phase": "phase2" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "intake form (Phase 2)",
+      "phase": "phase2"
+    }
   },
   {
     "id": "maya_lifestyle_sleep",
     "text": "Lifestyle: owner of a small screen-printing studio; self-rated work stress 8/10. Exercises 2 days/week; ~20 min of sunlight 3 days/week. Drinks alcohol monthly; no tobacco or recreational drugs. Eats out more than twice a week. Sleep: averages less than 6 hours, does not wake refreshed, wakes about twice per night (once to urinate); unsure about snoring or apnea.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "intake form (Phase 2)", "phase": "phase2" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "intake form (Phase 2)",
+      "phase": "phase2"
+    }
   },
   {
     "id": "maya_environmental_exposures",
     "text": "Environmental exposures: daily contact with industrial solvents and glues at the screen-printing studio for about 4 years; reports mold and moisture exposure from a damp basement storage area. Took antibiotics as a child and had high sugary intake in childhood; not born via C-section. Mercury fillings not removed. Maintains daily oral hygiene.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "intake form (Phase 2)", "phase": "phase2" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "intake form (Phase 2)",
+      "phase": "phase2"
+    }
   },
   {
     "id": "maya_lab_trend",
     "text": "Trended labs (Mar 2025 to May 2026): ferritin falling 52 -> 41 -> 34 -> 18 ng/mL; iron saturation 24 -> 20 -> 16 -> 11%; vitamin D (25-OH) 31 -> 28 -> 25 -> 22 ng/mL; hs-CRP rising 0.9 -> 1.3 -> 1.7 -> 2.1 mg/L; TSH creeping up 2.8 -> 3.1 -> 3.5 -> 3.8 mIU/L. The downward ferritin trend with low iron saturation signals depleting iron stores even though ferritin is still technically low-normal.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "EHR lab history", "phase": "phase3" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "EHR lab history",
+      "phase": "phase3"
+    }
   },
   {
     "id": "maya_uploaded_lab_panel",
     "text": "Uploaded Quest-format lab panel (collected 2026-05-20): iron saturation 11% (LOW), UIBC 365 mcg/dL (HIGH), ferritin 18 ng/mL (low-normal, trending down), 25-OH vitamin D 22 ng/mL (LOW), hs-CRP 2.1 mg/L (elevated), calculated LDL 112 mg/dL (HIGH), TSH 3.8 mIU/L (high-normal). HbA1c 5.4%, ApoB 88 mg/dL, estradiol 48 pg/mL. Interpretation: depleting iron stores with low iron saturation and high UIBC, insufficient vitamin D, mild systemic inflammation, and a high-normal TSH worth screening.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "uploaded lab PDF (maya_chen_quest_report_2026-05-20.pdf)", "phase": "phase3" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "uploaded lab PDF (maya_chen_quest_report_2026-05-20.pdf)",
+      "phase": "phase3"
+    }
   },
   {
     "id": "maya_wearable_oura",
     "text": "OURA Ring trends: 90-day baseline averaged sleep 7.1h, HRV 48ms, resting HR 61 bpm, readiness 82. Over the past 6 months these declined steadily; the last 21 days averaged sleep 5.5h (-22% vs baseline), HRV 38ms (-21%), resting HR up about 7 bpm to 68, readiness 64. The long-term decline reveals a pattern that a single reading would miss.",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "wearable (OURA Ring)", "phase": "phase3" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "wearable (OURA Ring)",
+      "phase": "phase3"
+    }
   },
   {
     "id": "maya_practitioner_followups",
     "text": "Practitioner pre-visit follow-up questions (Dr. Okafor, generated 2026-05-22): (1) Confirm whether the recently heavier menstrual flow correlates with the falling ferritin [hormone/iron]. (2) Ask about ventilation and PPE use in the print studio [environment/detox]. (3) Screen thyroid given high-normal TSH with fatigue; consider thyroid antibodies [hormone/thyroid].",
-    "metadata": { "patient_id": "demo-maya-chen", "source": "practitioner follow-ups", "phase": "phase3" }
+    "metadata": {
+      "patient_id": "demo-maya-chen",
+      "source": "practitioner follow-ups",
+      "phase": "phase3"
+    }
   }
 ]

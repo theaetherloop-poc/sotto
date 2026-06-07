@@ -48,6 +48,7 @@ export function ViewController({ appConfig, role, patientShareUrl }: ViewControl
           {...VIEW_MOTION_PROPS}
           startButtonText={appConfig.startButtonText}
           onStartCall={start}
+          patientShareUrl={patientShareUrl}
         />
       )}
       {/* Session view */}

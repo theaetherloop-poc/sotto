@@ -23,6 +23,7 @@ from livekit.agents.inference import STT as InferenceSTT
 
 from sotto.aether_kb import KbLibrary, format_kb_candidates
 from sotto.cue_engine import SYSTEM_PROMPT, CueEngine
+from sotto.demo_script import DemoScriptEmitter
 from sotto.patient_kb import PatientKB
 from sotto.metrics import (
     JsonlMetricsEventSink,
@@ -31,7 +32,7 @@ from sotto.metrics import (
     MetricsCollector,
     STTEvent,
 )
-from sotto.sinks import DataChannelSink, JsonlSink, StdoutSink
+from sotto.sinks import DataChannelSink, JsonlSink, StdoutSink, TranscriptChannelSink
 from sotto.telemetry import setup_tracing
 from sotto.transcript import MergedTranscript, TranscriptEvent, TranscriptFileWriter
 
@@ -52,6 +53,9 @@ STT_LANGUAGE = "en"
 LLM_MODEL = "google/gemini-3.1-flash-lite"
 # Low temperature so the emit/none call is stable across near-identical windows.
 LLM_TEMPERATURE = 0.2
+# Demo-only: when set, surface a fixed scripted set of cards (see demo_script.py) and DISABLE the
+# live LLM cue engine, so a rehearsed walkthrough is fully deterministic. Unset for normal runs.
+DEMO_SCRIPT = os.getenv("SOTTO_DEMO_SCRIPT", "").strip().lower() in ("1", "true", "yes", "on")
 
 server = AgentServer()
 
@@ -289,15 +293,24 @@ async def entrypoint(ctx: JobContext) -> None:
         DataChannelSink(ctx.room),
         JsonlSink(Path("logs/sotto-cues.jsonl")),
     ]
-    cue_engine = CueEngine(
-        llm_call=_build_llm_caller(llm_instance),
-        transcript=transcript,
-        sinks=sinks,
-        metrics=metrics,
-        retrieve=retrieve,
-    )
-    transcript.on_new_final(cue_engine.on_new_final)
+    if DEMO_SCRIPT:
+        # Scripted demo: deterministic cards only, LLM cue engine disabled (see demo_script.py).
+        logger.warning(
+            "SOTTO_DEMO_SCRIPT enabled — emitting scripted cues; live LLM cue engine disabled"
+        )
+        transcript.on_new_final(DemoScriptEmitter(sinks))
+    else:
+        cue_engine = CueEngine(
+            llm_call=_build_llm_caller(llm_instance),
+            transcript=transcript,
+            sinks=sinks,
+            metrics=metrics,
+            retrieve=retrieve,
+        )
+        transcript.on_new_final(cue_engine.on_new_final)
     transcript.on_new_final(TranscriptFileWriter(Path("logs/sotto-transcript.jsonl")))
+    # Stream each finalized line to the doctor dashboard (topic "sotto_transcript").
+    transcript.on_new_final(TranscriptChannelSink(ctx.room))
 
     track_tasks: dict[str, asyncio.Task] = {}
 

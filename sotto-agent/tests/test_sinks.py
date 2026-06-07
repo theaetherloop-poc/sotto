@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from rich.console import Console
 
-from sotto.sinks import Card, DataChannelSink, JsonlSink, StdoutSink
+from sotto.sinks import (
+    Card,
+    DataChannelSink,
+    JsonlSink,
+    StdoutSink,
+    TranscriptChannelSink,
+)
+from sotto.transcript import TranscriptEvent
 
 
 def _card() -> Card:
@@ -33,6 +41,8 @@ def test_card_serializes_with_all_fields():
         "source",
         "kb_id",
         "usefulness",
+        "header",
+        "rows",
         "triggered_at",
     }
     assert set(payload.keys()) == expected_keys
@@ -100,3 +110,48 @@ async def test_data_channel_sink_swallows_publish_errors():
     sink = DataChannelSink(BrokenRoom())
     # Must not raise — sinks are best-effort.
     await sink.emit(_card())
+
+
+async def test_transcript_channel_sink_publishes_envelope_on_correct_topic():
+    captured = {}
+
+    class FakeLocal:
+        async def publish_data(self, payload, *, reliable, topic):
+            captured["payload"] = payload
+            captured["reliable"] = reliable
+            captured["topic"] = topic
+
+    class FakeRoom:
+        local_participant = FakeLocal()
+
+    sink = TranscriptChannelSink(FakeRoom())
+    event = TranscriptEvent(
+        timestamp=datetime(2026, 6, 7, 14, 22, tzinfo=timezone.utc),
+        speaker="patient",
+        text="I've just been so exhausted lately.",
+    )
+    await sink(event)
+
+    assert captured["topic"] == "sotto_transcript"
+    assert captured["reliable"] is True
+    body = json.loads(captured["payload"].decode("utf-8"))
+    assert body["type"] == "sotto_transcript"
+    assert body["data"]["speaker"] == "patient"
+    assert body["data"]["text"] == "I've just been so exhausted lately."
+    assert body["data"]["timestamp"] == "2026-06-07T14:22:00+00:00"
+
+
+async def test_transcript_channel_sink_swallows_publish_errors():
+    class BrokenLocal:
+        async def publish_data(self, *_args, **_kwargs):
+            raise RuntimeError("network gone")
+
+    class BrokenRoom:
+        local_participant = BrokenLocal()
+
+    sink = TranscriptChannelSink(BrokenRoom())
+    event = TranscriptEvent(
+        timestamp=datetime.now(timezone.utc), speaker="doctor", text="hello"
+    )
+    # Must not raise — sinks are best-effort.
+    await sink(event)
