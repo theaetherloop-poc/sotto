@@ -1,4 +1,4 @@
-**Demo Video **- https://youtu.be/VpwMCkp8qig
+**Demo Video**- https://youtu.be/VpwMCkp8qig
 **HOW TO TEST THE CODE?**
 1. Go to the hosted app - https://sotto-gamma-seven.vercel.app/ 
 2. As a doctor, share the PATIENT JOIN LINK link with another user who will be the patient in the this coversation.
