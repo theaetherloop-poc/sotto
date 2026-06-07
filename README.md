@@ -4,32 +4,29 @@
 3. 2 users (Doctor and Patient) need to log in from two different devices.Ideal environment for conversation is a quiet room and use headphones
 4. Once both users are logged in and connected, use the Sotto_Capture_LiveScript.docx to have a sample conversatoin. This tests three core value adds in the solution
    
-  **Ambient Co-pilot- Live Root-cause probe**
+   A. **Ambient Co-pilot- Live Root-cause probe**
     
     Patient: “I used to work at a print shop, lots of solvents.”.
-    
     Within 2s a Suggested Next Question stack appears — 
     Solvent names? route (inhaled / skin)? duration? PPE? symptoms? — each cited to the KB. 
-    
     Practitioner reads one aloud.
 
      
    **That’s our functional-medicine question library, retrieved live by the retrieval engine.**
   
-  **Moss orchestration with KB,Wearables and EHR integration — Fused context**
+  B.  **Moss orchestration with KB,Wearables and EHR integration — Fused context**
 
    Patient: “I’ve just been so exhausted lately.” 
-   
    → Patient Context card: “Oura: avg 5.5h sleep, HRV ↓20% over 3 weeks” + “Ferritin trending down, last 2 panels (EHR).” 
    
    
   **“Three data sources fused in under two seconds.”**
  
-**- Novel Functional Medicine AI usage - Protocol direction -**
+ C.  **- Novel Functional Medicine AI usage - Protocol direction -**
 
   Copilot surfaces a Protocol Direction card (when Generate Protocol is clicked) from the recommendation engine, with citations. 
   
-**“Grounded in the patient’s own data — not a hallucination.”**
+  **“Grounded in the patient’s own data — not a hallucination.”**
 
 YOU CAN CHOOSE TEST WITHOUT THE SCRIPT TOO. THE SCRIPT ALLOWS TESTING ALL THE FEATURES.
 5. Leave the call once finished.
