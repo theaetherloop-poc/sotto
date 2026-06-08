@@ -16,7 +16,7 @@ doctor's dashboard when the model judges there's a clear opportunity:
 **This is a hackathon POC, not a production system.** It does not handle PHI, has no
 authentication, and is intended for demos and internal exploration only.
 
-**Demo Video**- https://youtu.be/VpwMCkp8qig
+**Demo Video**- [https://youtu.be/VpwMCkp8qig](https://youtu.be/uXS_fjLnKg0)
 **HOW TO TEST THE CODE?**
 1. Go to the hosted app - https://sotto-gamma-seven.vercel.app/ 
 2. As a doctor, share the PATIENT JOIN LINK link with another user who will be the patient in the this coversation.
